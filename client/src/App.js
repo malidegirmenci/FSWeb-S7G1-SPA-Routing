@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
+import FilmListesi from './Filmler/FilmListesi';
 import KaydedilenlerListesi from './Filmler/KaydedilenlerListesi';
-
-export default function App () {
+import { Route, Switch } from 'react-router-dom/cjs/react-router-dom.min';
+import NotFoundPage from './NotFound';
+import Film from './Filmler/Film';
+export default function App() {
   const [saved, setSaved] = useState([]); // Stretch: the ids of "saved" movies
   const [movieList, setMovieList] = useState([]);
+  const [idList,setIdList] = useState([]);
 
   useEffect(() => {
     const FilmleriAl = () => {
       axios
-        .get('http://localhost:5001/api/filmler') // Burayı Postman'le çalışın
+        .get('http://localhost:5001/api/filmler')
         .then(response => {
-          // Bu kısmı log statementlarıyla çalışın
-          // ve burdan gelen response'u 'movieList' e aktarın
+          setMovieList(response.data);
+          //console.log(response);
         })
         .catch(error => {
           console.error('Sunucu Hatası', error);
@@ -21,16 +24,31 @@ export default function App () {
     }
     FilmleriAl();
   }, []);
-
+  //console.log(movieList)
   const KaydedilenlerListesineEkle = id => {
-    // Burası esnek. Aynı filmin birden fazla kez "saved" e eklenmesini engelleyin
+    if(!idList.includes(id)){
+      console.log("id",id);
+      setIdList([...idList,id]);
+      const selectedMovie = movieList.find((movie) => movie.id === id)
+      setSaved([...saved , selectedMovie]);
+      console.log("ArrList:",saved);
+    }else{
+      console.log("Movie already added")
+    }
   };
-
+  
   return (
     <div>
-      <KaydedilenlerListesi list={[ /* Burası esnek */]} />
-
-      <div>Bu Div'i kendi Routelarınızla değiştirin</div>
+      <KaydedilenlerListesi list={saved}/>
+      <Switch>
+        <Route exact path="/">
+          <FilmListesi movies={movieList} ></FilmListesi>
+        </Route>
+        <Route exact path="/filmler/:id">
+          <Film addToList={KaydedilenlerListesineEkle}></Film>
+        </Route>
+        <Route exact path="*"><NotFoundPage/></Route>
+      </Switch>
     </div>
   );
 }
